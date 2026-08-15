@@ -37,6 +37,7 @@
         :show-global-tasks="showGlobalTasks"
         :respect-task-filters-for-impact="respectTaskFiltersForImpact"
         :hide-completed-map-objectives="hideCompletedMapObjectives"
+        :only-show-pinned-tasks="onlyShowPinnedTasks"
         @update:show-non-special-tasks="showNonSpecialTasks = $event"
         @update:show-kappa-tasks="showKappaTasks = $event"
         @update:show-lightkeeper-tasks="showLightkeeperTasks = $event"
@@ -45,6 +46,7 @@
         @update:show-global-tasks="showGlobalTasks = $event"
         @update:respect-task-filters-for-impact="respectTaskFiltersForImpact = $event"
         @update:hide-completed-map-objectives="hideCompletedMapObjectives = $event"
+        @update:only-show-pinned-tasks="onlyShowPinnedTasks = $event"
       />
       <CardDisplaySection
         :show-required-labels="showRequiredLabels"
@@ -193,6 +195,10 @@
   const hideCompletedMapObjectives = computed({
     get: () => preferencesStore.getHideCompletedMapObjectives,
     set: (value) => preferencesStore.setHideCompletedMapObjectives(value),
+  });
+  const onlyShowPinnedTasks = computed({
+    get: () => preferencesStore.getOnlyShowPinnedTasks,
+    set: (value) => preferencesStore.setOnlyShowPinnedTasks(value),
   });
   const showRequiredLabels = computed({
     get: () => preferencesStore.getShowRequiredLabels,
