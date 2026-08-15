@@ -62,6 +62,7 @@ const preferencesStoreMock = {
   getRespectTaskFiltersForImpact: true,
   getPinnedTaskIds: [] as string[],
   getHideCompletedMapObjectives: false,
+  getOnlyShowPinnedTasks: false as boolean | ReturnType<typeof ref<boolean>>,
   mapTeamAllHidden: false,
   togglePinnedTask: vi.fn(),
   setHideCompletedMapObjectives: vi.fn(),
@@ -283,6 +284,7 @@ describe('tasks page', () => {
     preferencesStoreMock.getHideGlobalTasks = false;
     preferencesStoreMock.getPinnedTaskIds = [];
     preferencesStoreMock.getHideCompletedMapObjectives = false;
+    preferencesStoreMock.getOnlyShowPinnedTasks = false;
     preferencesStoreMock.mapTeamAllHidden = false;
     preferencesStoreMock.setHideCompletedMapObjectives.mockReset();
     progressStoreMock.visibleTeamStores = { self: {} };
@@ -319,6 +321,27 @@ describe('tasks page', () => {
       secondaryView: 'all',
     });
     expect(preferencesStoreMock.getTaskSecondaryView).toBe('available');
+  });
+  it('refreshes visible tasks when the only-pinned-tasks filter is toggled', async () => {
+    // storeToRefs is mocked to reuse a value as-is when it is already a Vue ref
+    // (see the `vi.mock('pinia', ...)` above). Assigning an actual ref here lets us
+    // mutate `.value` after mount and observe whether the watch inside tasks.vue
+    // reacts to it -- a plain boolean reassignment on preferencesStoreMock would only
+    // be picked up by a fresh mount, which would not prove the watch itself reacts.
+    const onlyShowPinnedTasksRef = ref(false);
+    preferencesStoreMock.getOnlyShowPinnedTasks = onlyShowPinnedTasksRef;
+    await mountPage();
+    // Ignore the immediate: true call that happens on mount.
+    updateVisibleTasksMock.mockClear();
+    vi.useFakeTimers();
+    try {
+      onlyShowPinnedTasksRef.value = true;
+      await nextTick();
+      await vi.advanceTimersByTimeAsync(50);
+      expect(updateVisibleTasksMock).toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
   });
   it('keeps initial task slice when tasks arrive after mount', async () => {
     visibleTasksRef.value = [];
