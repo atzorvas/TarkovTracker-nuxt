@@ -1797,7 +1797,7 @@
           "self_objective": "Your Objective",
           "pinned_objective": "Pinned Task",
           "team_objective": "Team Objective",
-          "selected": "Selected Marker",
+          "selected": "Pinned Objective",
           "shared_extract": "Shared Extract",
           "coop_extract": "Co-op Extract"
         }
