@@ -495,7 +495,8 @@
       "pmc": "PMC"
     },
     "layers": {
-      "pmc_spawns": "PMC Spawns"
+      "pmc_spawns": "PMC Spawns",
+      "pinned_only": "Pinned Only"
     },
     "legend": {
       "your_objectives": "Your Objectives",
@@ -1799,6 +1800,7 @@
           "title": "Map Colors",
           "description": "Set marker colors for better readability and accessibility.",
           "self_objective": "Your Objective",
+          "pinned_objective": "Pinned Task",
           "team_objective": "Team Objective",
           "selected": "Pinned Objective",
           "shared_extract": "Shared Extract",
