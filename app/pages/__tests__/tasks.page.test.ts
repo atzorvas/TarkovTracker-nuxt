@@ -345,6 +345,15 @@ describe('tasks page', () => {
     await toggleButton.trigger('click');
     expect(preferencesStoreMock.setHideCompletedMapObjectives).toHaveBeenCalledWith(false);
   });
+  it('expands the map panel by default in the maps view', async () => {
+    preferencesStoreMock.getTaskPrimaryView = 'maps';
+    preferencesStoreMock.getTaskMapView = 'map-1';
+    metadataStoreMock.mapsWithSvg = [{ id: 'map-1', name: 'Map One' }];
+    await mountPage();
+    const toggleButton = wrapper.find('[data-testid="map-panel-toggle"]');
+    expect(toggleButton.exists()).toBe(true);
+    expect(toggleButton.attributes('aria-expanded')).toBe('true');
+  });
   it('collapses and expands the map panel from the map header toggle', async () => {
     preferencesStoreMock.getTaskPrimaryView = 'maps';
     preferencesStoreMock.getTaskMapView = 'map-1';
@@ -352,22 +361,33 @@ describe('tasks page', () => {
     await mountPage();
     const toggleButton = wrapper.find('[data-testid="map-panel-toggle"]');
     expect(toggleButton.exists()).toBe(true);
-    expect(toggleButton.attributes('aria-expanded')).toBe('false');
-    await toggleButton.trigger('click');
-    await nextTick();
     expect(toggleButton.attributes('aria-expanded')).toBe('true');
     await toggleButton.trigger('click');
     await nextTick();
     expect(toggleButton.attributes('aria-expanded')).toBe('false');
+    await toggleButton.trigger('click');
+    await nextTick();
+    expect(toggleButton.attributes('aria-expanded')).toBe('true');
   });
-  it('restores the saved map panel expanded state', async () => {
-    localStorage.setItem(STORAGE_KEYS.tasksMapPanelExpanded, 'true');
+  it('labels the map panel toggle with the action it performs', async () => {
     preferencesStoreMock.getTaskPrimaryView = 'maps';
     preferencesStoreMock.getTaskMapView = 'map-1';
     metadataStoreMock.mapsWithSvg = [{ id: 'map-1', name: 'Map One' }];
     await mountPage();
     const toggleButton = wrapper.find('[data-testid="map-panel-toggle"]');
-    expect(toggleButton.attributes('aria-expanded')).toBe('true');
+    expect(toggleButton.text()).toContain('page.tasks.map.hide_map');
+    await toggleButton.trigger('click');
+    await nextTick();
+    expect(toggleButton.text()).toContain('page.tasks.map.show_map');
+  });
+  it('restores the saved map panel collapsed state over the expanded default', async () => {
+    localStorage.setItem(STORAGE_KEYS.tasksMapPanelExpanded, 'false');
+    preferencesStoreMock.getTaskPrimaryView = 'maps';
+    preferencesStoreMock.getTaskMapView = 'map-1';
+    metadataStoreMock.mapsWithSvg = [{ id: 'map-1', name: 'Map One' }];
+    await mountPage();
+    const toggleButton = wrapper.find('[data-testid="map-panel-toggle"]');
+    expect(toggleButton.attributes('aria-expanded')).toBe('false');
   });
   it('expands the map panel when jumping to a map objective from a collapsed state', async () => {
     const TaskCardJumpStub = defineComponent({
@@ -380,6 +400,7 @@ describe('tasks page', () => {
       template:
         '<button data-testid="jump-to-map-objective" @click="jumpToMapObjective?.(\'obj-1\')">Jump</button>',
     });
+    localStorage.setItem(STORAGE_KEYS.tasksMapPanelExpanded, 'false');
     preferencesStoreMock.getTaskPrimaryView = 'maps';
     preferencesStoreMock.getTaskMapView = 'map-1';
     metadataStoreMock.mapsWithSvg = [{ id: 'map-1', name: 'Map One' }];

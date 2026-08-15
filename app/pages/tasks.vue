@@ -47,17 +47,24 @@
                   </div>
                   <UButton
                     data-testid="map-panel-toggle"
-                    icon="i-mdi-chevron-down"
-                    variant="ghost"
-                    color="neutral"
-                    size="xs"
-                    :aria-label="t('page.tasks.map.toggle_panel')"
+                    icon="i-mdi-map"
+                    :trailing-icon="isMapPanelExpanded ? 'i-mdi-chevron-up' : 'i-mdi-chevron-down'"
+                    :color="isMapPanelExpanded ? 'primary' : 'neutral'"
+                    :variant="isMapPanelExpanded ? 'subtle' : 'outline'"
+                    size="sm"
                     :aria-expanded="isMapPanelExpanded"
                     aria-controls="tasks-map-panel-content"
-                    :class="{ 'rotate-180': isMapPanelExpanded }"
-                    class="mt-0.5 shrink-0 transition-transform duration-200"
+                    class="shrink-0"
                     @click="toggleMapPanelVisibility"
-                  />
+                  >
+                    <span class="text-xs font-semibold tracking-wide uppercase">
+                      {{
+                        isMapPanelExpanded
+                          ? t('page.tasks.map.hide_map')
+                          : t('page.tasks.map.show_map')
+                      }}
+                    </span>
+                  </UButton>
                 </div>
                 <Transition
                   enter-active-class="transition duration-150 ease-out"
@@ -460,7 +467,9 @@
     stopResize,
     onResizeKeydown,
   } = useMapResize();
-  const isMapPanelExpanded = useStorage<boolean>(STORAGE_KEYS.tasksMapPanelExpanded, false);
+  // Default to expanded: switching to the maps view should show the map, not a collapsed header.
+  // A user who collapses it still keeps that choice — useStorage persists the explicit toggle.
+  const isMapPanelExpanded = useStorage<boolean>(STORAGE_KEYS.tasksMapPanelExpanded, true);
   const toggleMapPanelVisibility = () => {
     if (isMapPanelExpanded.value) {
       stopResize();
