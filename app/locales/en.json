@@ -495,7 +495,8 @@
       "pmc": "PMC"
     },
     "layers": {
-      "pmc_spawns": "PMC Spawns"
+      "pmc_spawns": "PMC Spawns",
+      "pinned_only": "Pinned Only"
     },
     "legend": {
       "your_objectives": "Your Objectives",
@@ -872,8 +873,7 @@
           "has_required_keys": "Only Tasks with Keys",
           "show_global_tasks": "Show Global Tasks on Map",
           "impact_respects_filters": "Impact Respects Task Filters",
-          "hide_completed_map_objectives": "Hide Map-Complete Tasks",
-          "only_pinned_tasks": "Only Show Pinned Tasks"
+          "hide_completed_map_objectives": "Hide Map-Complete Tasks"
         },
         "appearance": {
           "hint": "Tune how task cards look.",

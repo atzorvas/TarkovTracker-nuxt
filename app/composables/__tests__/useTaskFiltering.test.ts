@@ -165,7 +165,6 @@ const createPreferencesStore = () => ({
   getTaskUserView: 'self',
   getTaskSecondaryView: 'available',
   getPinnedTaskIds: [] as string[],
-  getOnlyShowPinnedTasks: false,
 });
 const createTarkovStore = () => ({
   getPrestigeLevel: () => 0,
@@ -559,104 +558,6 @@ describe('useTaskFiltering', () => {
       'task-map',
       'task-locked',
     ]);
-  });
-  describe('onlyShowPinnedTasks filter', () => {
-    it('leaves the visible task list unchanged when onlyShowPinnedTasks is false', async () => {
-      const { taskFiltering, preferencesStore } = await setup();
-      preferencesStore.getOnlyShowPinnedTasks = false;
-      preferencesStore.getPinnedTaskIds = ['task-map'];
-      await taskFiltering.updateVisibleTasks(
-        {
-          primaryView: 'all',
-          secondaryView: 'available',
-          userView: 'self',
-          mapView: 'all',
-          traderView: 'all',
-          mergedMaps: [],
-          sortMode: 'none',
-          sortDirection: 'asc',
-        },
-        false
-      );
-      expect(taskFiltering.visibleTasks.value.map((task) => task.id)).toEqual([
-        'task-map',
-        'task-global',
-        'task-non-raid',
-        'task-kappa',
-        'task-lightkeeper',
-      ]);
-    });
-    it('keeps only pinned tasks when onlyShowPinnedTasks is enabled', async () => {
-      const { taskFiltering, preferencesStore } = await setup();
-      preferencesStore.getOnlyShowPinnedTasks = true;
-      preferencesStore.getPinnedTaskIds = ['task-map', 'task-kappa'];
-      await taskFiltering.updateVisibleTasks(
-        {
-          primaryView: 'all',
-          secondaryView: 'available',
-          userView: 'self',
-          mapView: 'all',
-          traderView: 'all',
-          mergedMaps: [],
-          sortMode: 'none',
-          sortDirection: 'asc',
-        },
-        false
-      );
-      expect(taskFiltering.visibleTasks.value.map((task) => task.id)).toEqual([
-        'task-map',
-        'task-kappa',
-      ]);
-    });
-    it('composes with the required-keys filter rather than replacing it', async () => {
-      const { taskFiltering, preferencesStore } = await setup();
-      preferencesStore.getOnlyTasksWithRequiredKeys = true;
-      preferencesStore.getOnlyShowPinnedTasks = true;
-      preferencesStore.getPinnedTaskIds = ['task-map'];
-      await taskFiltering.updateVisibleTasks(
-        {
-          primaryView: 'all',
-          secondaryView: 'available',
-          userView: 'self',
-          mapView: 'all',
-          traderView: 'all',
-          mergedMaps: [],
-          sortMode: 'none',
-          sortDirection: 'asc',
-        },
-        false
-      );
-      // Without onlyShowPinnedTasks this would be ['task-map', 'task-lightkeeper'];
-      // enabling the pinned filter narrows it further to only the pinned task.
-      expect(taskFiltering.visibleTasks.value.map((task) => task.id)).toEqual(['task-map']);
-    });
-    it('calculateFilteredTasksForOptions applies the only-pinned filter as well', async () => {
-      const { taskFiltering, metadataStore, preferencesStore } = await setup();
-      preferencesStore.getPinnedTaskIds = ['task-map'];
-      const options = {
-        primaryView: 'all' as const,
-        secondaryView: 'available' as const,
-        userView: 'self',
-        mapView: 'all',
-        traderView: 'all',
-        mergedMaps: [],
-        sortMode: 'none' as const,
-        sortDirection: 'asc' as const,
-      };
-      const withFilterDisabled = taskFiltering.calculateFilteredTasksForOptions(
-        metadataStore.tasks,
-        options,
-        false
-      );
-      preferencesStore.getOnlyShowPinnedTasks = true;
-      const withFilterEnabled = taskFiltering.calculateFilteredTasksForOptions(
-        metadataStore.tasks,
-        options,
-        false
-      );
-      expect(withFilterEnabled.map((task) => task.id)).toEqual(['task-map']);
-      expect(withFilterDisabled.length).toBeGreaterThan(withFilterEnabled.length);
-    });
   });
   describe('isRaidRelevantObjective', () => {
     it('returns true for all raid-relevant objective types', async () => {

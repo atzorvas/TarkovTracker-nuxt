@@ -44,7 +44,9 @@ export function useMapObjectiveMarks({
       ? Object.keys(progressStore.visibleTeamStores).filter((id) => id !== 'self')
       : [];
     const pinnedTaskIds = new Set(preferencesStore.getPinnedTaskIds);
+    const onlyShowPinned = preferencesStore.getMapOnlyShowPinnedTasks;
     tasks.value.forEach((task) => {
+      if (onlyShowPinned && !pinnedTaskIds.has(task.id)) return;
       if (!task.objectives) return;
       const objectiveMaps = metadataStore.objectiveMaps?.[task.id] ?? [];
       const objectiveGps = metadataStore.objectiveGPS?.[task.id] ?? [];

@@ -97,16 +97,6 @@
           </span>
         </div>
       </label>
-      <label
-        class="hover:bg-surface-700/50 flex cursor-pointer items-center gap-2.5 rounded px-2 py-1.5 transition-colors"
-      >
-        <UCheckbox v-model="onlyShowPinnedTasksModel" />
-        <div class="min-w-0 flex-1">
-          <span class="text-surface-200 text-sm">
-            {{ t('page.tasks.settings.filters.only_pinned_tasks') }}
-          </span>
-        </div>
-      </label>
     </div>
   </section>
 </template>
@@ -121,7 +111,6 @@
     showGlobalTasks: boolean;
     respectTaskFiltersForImpact: boolean;
     hideCompletedMapObjectives: boolean;
-    onlyShowPinnedTasks: boolean;
   }>();
   const emit = defineEmits<{
     'update:showNonSpecialTasks': [value: boolean];
@@ -132,7 +121,6 @@
     'update:showGlobalTasks': [value: boolean];
     'update:respectTaskFiltersForImpact': [value: boolean];
     'update:hideCompletedMapObjectives': [value: boolean];
-    'update:onlyShowPinnedTasks': [value: boolean];
   }>();
   const { t } = useI18n({ useScope: 'global' });
   const showNonSpecialTasksModel = computed({
@@ -166,9 +154,5 @@
   const hideCompletedMapObjectivesModel = computed({
     get: () => props.hideCompletedMapObjectives,
     set: (value: boolean) => emit('update:hideCompletedMapObjectives', value),
-  });
-  const onlyShowPinnedTasksModel = computed({
-    get: () => props.onlyShowPinnedTasks,
-    set: (value: boolean) => emit('update:onlyShowPinnedTasks', value),
   });
 </script>

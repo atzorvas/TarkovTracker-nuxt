@@ -133,7 +133,7 @@ describe('usePreferencesStore', () => {
       expect(store.mapZoomSpeed).toBe(1);
       expect(store.mapPanSpeed).toBe(1);
       expect(store.pinnedTaskIds).toEqual([]);
-      expect(store.onlyShowPinnedTasks).toBe(false);
+      expect(store.mapOnlyShowPinnedTasks).toBe(false);
     });
     it('sanitizes keybinds assigned through store actions', () => {
       const store = usePreferencesStore();
@@ -945,11 +945,11 @@ describe('usePreferencesStore', () => {
       store.pinnedTaskIds = ['task-1', 'task-2'];
       expect(store.getPinnedTaskIds).toEqual(['task-1', 'task-2']);
     });
-    it('should return onlyShowPinnedTasks state with default false', () => {
+    it('should return mapOnlyShowPinnedTasks state with default false', () => {
       const store = usePreferencesStore();
-      expect(store.getOnlyShowPinnedTasks).toBe(false);
-      store.onlyShowPinnedTasks = true;
-      expect(store.getOnlyShowPinnedTasks).toBe(true);
+      expect(store.getMapOnlyShowPinnedTasks).toBe(false);
+      store.mapOnlyShowPinnedTasks = true;
+      expect(store.getMapOnlyShowPinnedTasks).toBe(true);
     });
     it('should return skillSortMode state with default priority', () => {
       const store = usePreferencesStore();
@@ -1300,10 +1300,10 @@ describe('usePreferencesStore', () => {
     });
     it('should set only show pinned tasks filter', () => {
       const store = usePreferencesStore();
-      store.setOnlyShowPinnedTasks(true);
-      expect(store.onlyShowPinnedTasks).toBe(true);
-      store.setOnlyShowPinnedTasks(false);
-      expect(store.onlyShowPinnedTasks).toBe(false);
+      store.setMapOnlyShowPinnedTasks(true);
+      expect(store.mapOnlyShowPinnedTasks).toBe(true);
+      store.setMapOnlyShowPinnedTasks(false);
+      expect(store.mapOnlyShowPinnedTasks).toBe(false);
     });
   });
   describe('Actions - XP and Level', () => {
@@ -1455,10 +1455,10 @@ describe('usePreferencesStore', () => {
       store.$patch({ pinnedTaskIds: undefined });
       expect(store.getPinnedTaskIds).toEqual([]);
     });
-    it('should handle nullish onlyShowPinnedTasks in getter', () => {
+    it('should handle nullish mapOnlyShowPinnedTasks in getter', () => {
       const store = usePreferencesStore();
-      store.$patch({ onlyShowPinnedTasks: undefined });
-      expect(store.getOnlyShowPinnedTasks).toBe(false);
+      store.$patch({ mapOnlyShowPinnedTasks: undefined });
+      expect(store.getMapOnlyShowPinnedTasks).toBe(false);
     });
     it('should handle nullish mapMarkerColors in getter', () => {
       const store = usePreferencesStore();

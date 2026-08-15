@@ -89,6 +89,16 @@
         >
           {{ t('maps.layers.pmc_spawns') }}
         </UButton>
+        <UButton
+          color="neutral"
+          :variant="mapOnlyShowPinnedTasks ? 'soft' : 'ghost'"
+          size="sm"
+          icon="i-mdi-pin"
+          :class="mapOnlyShowPinnedTasks ? MAP_BUTTON_ACTIVE_CLASS : MAP_BUTTON_INACTIVE_CLASS"
+          @click="mapOnlyShowPinnedTasks = !mapOnlyShowPinnedTasks"
+        >
+          {{ t('maps.layers.pinned_only') }}
+        </UButton>
         <UPopover>
           <UButton
             color="neutral"
@@ -425,6 +435,10 @@
   });
   const isMapUnavailable = computed(() => {
     return props.map?.unavailable === true;
+  });
+  const mapOnlyShowPinnedTasks = computed({
+    get: () => preferencesStore.getMapOnlyShowPinnedTasks,
+    set: (value: boolean) => preferencesStore.setMapOnlyShowPinnedTasks(value),
   });
   const mapContainer = ref<HTMLElement | null>(null);
   const {

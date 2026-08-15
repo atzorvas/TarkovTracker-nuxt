@@ -407,7 +407,6 @@
     getHideGlobalTasks,
     getHideCompletedMapObjectives,
     getPinnedTaskIds,
-    getOnlyShowPinnedTasks,
   } = storeToRefs(preferencesStore);
   const metadataStore = useMetadataStore();
   const { tasks, loading: tasksLoading } = storeToRefs(metadataStore);
@@ -589,7 +588,6 @@
       getHideGlobalTasks,
       getHideCompletedMapObjectives,
       getPinnedTaskIds,
-      getOnlyShowPinnedTasks,
       tasksLoading,
       tasks,
       maps,

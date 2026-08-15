@@ -376,11 +376,6 @@ export function useTaskFiltering() {
     }
     return taskList.filter(taskHasRequiredKeys);
   };
-  const filterOnlyPinnedTasks = (taskList: Task[]): Task[] => {
-    if (!preferencesStore.getOnlyShowPinnedTasks) return taskList;
-    const pinnedIds = new Set(preferencesStore.getPinnedTaskIds);
-    return taskList.filter((task) => pinnedIds.has(task.id));
-  };
   const calculateMapTaskTotals = (
     mergedMaps: MergedMap[],
     tasks: Task[],
@@ -746,12 +741,7 @@ export function useTaskFiltering() {
     );
     const statusFilteredTasks = filterTasksByStatus(viewFilteredTasks, secondaryView, userView);
     const requiredKeysFilteredTasks = filterTasksByRequiredKeysSetting(statusFilteredTasks);
-    const sharedFilteredTasks = filterSharedByAllTasks(
-      requiredKeysFilteredTasks,
-      userView,
-      secondaryView
-    );
-    return filterOnlyPinnedTasks(sharedFilteredTasks);
+    return filterSharedByAllTasks(requiredKeysFilteredTasks, userView, secondaryView);
   };
   /**
    * Main function to update visible tasks based on all filters.
@@ -836,11 +826,6 @@ export function useTaskFiltering() {
         visibleTaskList = afterShared;
         sharedFilterMs = ms;
       }
-      const [afterPinnedOnly, pinnedOnlyFilterMs] = timed(
-        () => filterOnlyPinnedTasks(visibleTaskList),
-        perfOn
-      );
-      visibleTaskList = afterPinnedOnly;
       const [sorted, sortMs] = timed(
         () => sortTasks(visibleTaskList, userView, sortMode, sortDirection),
         perfOn
@@ -864,7 +849,6 @@ export function useTaskFiltering() {
         filterStatusMs: perfOn ? roundMs(filterStatusMs) : undefined,
         filterRequiredKeysMs: perfOn ? roundMs(filterRequiredKeysMs) : undefined,
         sharedFilterMs: perfOn ? roundMs(sharedFilterMs) : undefined,
-        pinnedOnlyFilterMs: perfOn ? roundMs(pinnedOnlyFilterMs) : undefined,
         sortMs: perfOn ? roundMs(sortMs) : undefined,
         statusGroupMs: perfOn ? roundMs(statusGroupMs) : undefined,
       });

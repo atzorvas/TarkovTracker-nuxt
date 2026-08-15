@@ -152,7 +152,7 @@ export interface PreferencesState {
   mapZoneOpacity: number;
   mapTooltipDensity: 'default' | 'compact';
   pinnedTaskIds: string[];
-  onlyShowPinnedTasks: boolean;
+  mapOnlyShowPinnedTasks: boolean;
   // Skills settings
   skillSortMode: SkillSortMode | null;
   traderSortMode: TraderSortMode | null;
@@ -239,7 +239,7 @@ export const preferencesDefaultState: PreferencesState = {
   mapZoneOpacity: 0.24,
   mapTooltipDensity: 'default',
   pinnedTaskIds: [],
-  onlyShowPinnedTasks: false,
+  mapOnlyShowPinnedTasks: false,
   // Skills settings
   skillSortMode: null,
   traderSortMode: null,
@@ -628,8 +628,8 @@ export const usePreferencesStore = defineStore('preferences', {
     getPinnedTaskIds: (state) => {
       return state.pinnedTaskIds ?? [];
     },
-    getOnlyShowPinnedTasks: (state) => {
-      return state.onlyShowPinnedTasks ?? false;
+    getMapOnlyShowPinnedTasks: (state) => {
+      return state.mapOnlyShowPinnedTasks ?? false;
     },
     // Skills getters
     getSkillSortMode: (state) => {
@@ -877,8 +877,8 @@ export const usePreferencesStore = defineStore('preferences', {
     setShowFailedFilter(show: boolean) {
       this.showFailedFilter = show;
     },
-    setOnlyShowPinnedTasks(show: boolean) {
-      this.onlyShowPinnedTasks = show;
+    setMapOnlyShowPinnedTasks(show: boolean) {
+      this.mapOnlyShowPinnedTasks = show;
     },
     setUseAutomaticLevelCalculation(use: boolean) {
       this.useAutomaticLevelCalculation = use;
@@ -997,7 +997,7 @@ export const usePreferencesStore = defineStore('preferences', {
       'showLockedFilter',
       'showCompletedFilter',
       'showFailedFilter',
-      'onlyShowPinnedTasks',
+      'mapOnlyShowPinnedTasks',
       'useAutomaticLevelCalculation',
       'dashboardNoticeDismissed',
       'hideoutCollapseCompleted',
