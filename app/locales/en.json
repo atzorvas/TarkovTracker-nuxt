@@ -1794,6 +1794,7 @@
           "title": "Map Colors",
           "description": "Set marker colors for better readability and accessibility.",
           "self_objective": "Your Objective",
+          "pinned_objective": "Pinned Task Objective",
           "team_objective": "Team Objective",
           "selected": "Pinned Objective",
           "shared_extract": "Shared Extract",

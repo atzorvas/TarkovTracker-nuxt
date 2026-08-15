@@ -277,6 +277,13 @@
           <div class="flex items-center gap-1">
             <div
               class="h-3 w-3 rounded-full border border-white/30"
+              :style="{ backgroundColor: mapColors.PINNED_OBJECTIVE }"
+            />
+            <span>{{ t('settings.interface.maps.colors.pinned_objective') }}</span>
+          </div>
+          <div class="flex items-center gap-1">
+            <div
+              class="h-3 w-3 rounded-full border border-white/30"
               :style="{ backgroundColor: mapColors.TEAM_OBJECTIVE }"
             />
             <span>{{ t('maps.legend.team_objectives') }}</span>
@@ -400,6 +407,7 @@
     zones: MapZone[];
     possibleLocations?: MapMarkLocation[];
     users?: string[];
+    pinned?: boolean;
   }
   interface Props {
     map: TarkovMap;
@@ -1147,9 +1155,11 @@
         if (!pos) return;
         const latLng = gameToLatLng(pos.x, pos.z);
         const isSelf = mark.users?.includes('self') ?? false;
-        const markerColor = isSelf
-          ? mapColors.value.SELF_OBJECTIVE
-          : mapColors.value.TEAM_OBJECTIVE;
+        const markerColor = mark.pinned
+          ? mapColors.value.PINNED_OBJECTIVE
+          : isSelf
+            ? mapColors.value.SELF_OBJECTIVE
+            : mapColors.value.TEAM_OBJECTIVE;
         const marker = L.circleMarker([latLng.lat, latLng.lng], {
           radius: 8,
           fillColor: markerColor,
@@ -1165,7 +1175,11 @@
         const latLngs = outlineToLatLngArray(zone.outline);
         if (latLngs.length < 3) return;
         const isSelf = mark.users?.includes('self') ?? false;
-        const zoneColor = isSelf ? mapColors.value.SELF_OBJECTIVE : mapColors.value.TEAM_OBJECTIVE;
+        const zoneColor = mark.pinned
+          ? mapColors.value.PINNED_OBJECTIVE
+          : isSelf
+            ? mapColors.value.SELF_OBJECTIVE
+            : mapColors.value.TEAM_OBJECTIVE;
         const polygonLatLngs = latLngs.map((ll) => [ll.lat, ll.lng]) as L.LatLngExpression[];
         const polygon = L.polygon(polygonLatLngs, {
           color: zoneColor,
