@@ -152,7 +152,9 @@ export interface PreferencesState {
   mapZoneOpacity: number;
   mapTooltipDensity: 'default' | 'compact';
   pinnedTaskIds: string[];
-  mapOnlyShowPinnedTasks: boolean;
+  mapShowSelfObjectives: boolean;
+  mapShowPinnedObjectives: boolean;
+  mapShowTeamObjectives: boolean;
   // Skills settings
   skillSortMode: SkillSortMode | null;
   traderSortMode: TraderSortMode | null;
@@ -239,7 +241,9 @@ export const preferencesDefaultState: PreferencesState = {
   mapZoneOpacity: 0.24,
   mapTooltipDensity: 'default',
   pinnedTaskIds: [],
-  mapOnlyShowPinnedTasks: false,
+  mapShowSelfObjectives: true,
+  mapShowPinnedObjectives: true,
+  mapShowTeamObjectives: true,
   // Skills settings
   skillSortMode: null,
   traderSortMode: null,
@@ -628,8 +632,14 @@ export const usePreferencesStore = defineStore('preferences', {
     getPinnedTaskIds: (state) => {
       return state.pinnedTaskIds ?? [];
     },
-    getMapOnlyShowPinnedTasks: (state) => {
-      return state.mapOnlyShowPinnedTasks ?? false;
+    getMapShowSelfObjectives: (state) => {
+      return state.mapShowSelfObjectives ?? true;
+    },
+    getMapShowPinnedObjectives: (state) => {
+      return state.mapShowPinnedObjectives ?? true;
+    },
+    getMapShowTeamObjectives: (state) => {
+      return state.mapShowTeamObjectives ?? true;
     },
     // Skills getters
     getSkillSortMode: (state) => {
@@ -877,8 +887,14 @@ export const usePreferencesStore = defineStore('preferences', {
     setShowFailedFilter(show: boolean) {
       this.showFailedFilter = show;
     },
-    setMapOnlyShowPinnedTasks(show: boolean) {
-      this.mapOnlyShowPinnedTasks = show;
+    setMapShowSelfObjectives(show: boolean) {
+      this.mapShowSelfObjectives = show;
+    },
+    setMapShowPinnedObjectives(show: boolean) {
+      this.mapShowPinnedObjectives = show;
+    },
+    setMapShowTeamObjectives(show: boolean) {
+      this.mapShowTeamObjectives = show;
     },
     setUseAutomaticLevelCalculation(use: boolean) {
       this.useAutomaticLevelCalculation = use;
@@ -997,7 +1013,9 @@ export const usePreferencesStore = defineStore('preferences', {
       'showLockedFilter',
       'showCompletedFilter',
       'showFailedFilter',
-      'mapOnlyShowPinnedTasks',
+      'mapShowSelfObjectives',
+      'mapShowPinnedObjectives',
+      'mapShowTeamObjectives',
       'useAutomaticLevelCalculation',
       'dashboardNoticeDismissed',
       'hideoutCollapseCompleted',

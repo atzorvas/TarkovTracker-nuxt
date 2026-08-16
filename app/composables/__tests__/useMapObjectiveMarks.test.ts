@@ -10,7 +10,6 @@ const objectiveMaps = ref<Record<string, Array<{ objectiveID: string; mapID: str
 const objectiveGPS = ref<Record<string, Array<{ objectiveID: string; x: number; y: number }>>>({});
 const mapTeamAllHidden = ref(false);
 const pinnedTaskIds = ref<string[]>([]);
-const mapOnlyShowPinnedTasks = ref(false);
 const completedObjectiveIds = ref<Set<string>>(new Set());
 const completedTaskIds = ref<Set<string>>(new Set());
 const failedTaskIds = ref<Set<string>>(new Set());
@@ -25,7 +24,6 @@ const setup = async () => {
   objectiveGPS.value = {};
   mapTeamAllHidden.value = false;
   pinnedTaskIds.value = [];
-  mapOnlyShowPinnedTasks.value = false;
   completedObjectiveIds.value = new Set();
   completedTaskIds.value = new Set();
   failedTaskIds.value = new Set();
@@ -56,9 +54,6 @@ const setup = async () => {
       },
       get getPinnedTaskIds() {
         return pinnedTaskIds.value;
-      },
-      get getMapOnlyShowPinnedTasks() {
-        return mapOnlyShowPinnedTasks.value;
       },
     }),
   }));
@@ -163,8 +158,14 @@ describe('useMapObjectiveMarks', () => {
     // mark for task-2's own objective ('obj-2') IS pinned because task-2 is pinned.
     expect(markFromTask2?.pinned).toBe(true);
   });
-  describe('mapOnlyShowPinnedTasks filter', () => {
-    const buildTasks = (): Task[] => [
+  it('keeps marks for unpinned tasks (map-level pinned filtering is applied downstream)', async () => {
+    const { useMapObjectiveMarks } = await setup();
+    unlockedTasks.value = {
+      'task-pinned': { self: true },
+      'task-unpinned': { self: true },
+    };
+    pinnedTaskIds.value = ['task-pinned'];
+    const tasks: Task[] = [
       {
         id: 'task-pinned',
         name: 'Pinned Task',
@@ -176,98 +177,15 @@ describe('useMapObjectiveMarks', () => {
         objectives: [objectiveWithLocation('obj-unpinned', 'customs')],
       },
     ];
-    beforeEach(() => {
-      unlockedTasks.value = {
-        'task-pinned': { self: true },
-        'task-unpinned': { self: true },
-      };
-      pinnedTaskIds.value = ['task-pinned'];
+    const mapId = computed(() => 'customs');
+    const shouldShowCompletedObjectives = computed(() => false);
+    const { mapObjectiveMarks } = useMapObjectiveMarks({
+      mapId,
+      shouldShowCompletedObjectives,
+      tasks: computed(() => tasks),
     });
-    it('produces marks for unpinned tasks when the filter is off (unchanged)', async () => {
-      const { useMapObjectiveMarks } = await setup();
-      unlockedTasks.value = {
-        'task-pinned': { self: true },
-        'task-unpinned': { self: true },
-      };
-      pinnedTaskIds.value = ['task-pinned'];
-      mapOnlyShowPinnedTasks.value = false;
-      const tasks = buildTasks();
-      const mapId = computed(() => 'customs');
-      const shouldShowCompletedObjectives = computed(() => false);
-      const { mapObjectiveMarks } = useMapObjectiveMarks({
-        mapId,
-        shouldShowCompletedObjectives,
-        tasks: computed(() => tasks),
-      });
-      expect(mapObjectiveMarks.value.find((mark) => mark.id === 'obj-pinned')).toBeDefined();
-      expect(mapObjectiveMarks.value.find((mark) => mark.id === 'obj-unpinned')).toBeDefined();
-      expect(mapObjectiveMarks.value).toHaveLength(2);
-    });
-    it('produces NO marks for unpinned tasks when the filter is on, but keeps pinned ones', async () => {
-      const { useMapObjectiveMarks } = await setup();
-      unlockedTasks.value = {
-        'task-pinned': { self: true },
-        'task-unpinned': { self: true },
-      };
-      pinnedTaskIds.value = ['task-pinned'];
-      mapOnlyShowPinnedTasks.value = true;
-      const tasks = buildTasks();
-      const mapId = computed(() => 'customs');
-      const shouldShowCompletedObjectives = computed(() => false);
-      const { mapObjectiveMarks } = useMapObjectiveMarks({
-        mapId,
-        shouldShowCompletedObjectives,
-        tasks: computed(() => tasks),
-      });
-      expect(mapObjectiveMarks.value.find((mark) => mark.id === 'obj-unpinned')).toBeUndefined();
-      expect(mapObjectiveMarks.value.find((mark) => mark.id === 'obj-pinned')).toBeDefined();
-      expect(mapObjectiveMarks.value).toHaveLength(1);
-    });
-    it('still marks the surviving mark as pinned:true when the filter is on', async () => {
-      const { useMapObjectiveMarks } = await setup();
-      unlockedTasks.value = {
-        'task-pinned': { self: true },
-        'task-unpinned': { self: true },
-      };
-      pinnedTaskIds.value = ['task-pinned'];
-      mapOnlyShowPinnedTasks.value = true;
-      const tasks = buildTasks();
-      const mapId = computed(() => 'customs');
-      const shouldShowCompletedObjectives = computed(() => false);
-      const { mapObjectiveMarks } = useMapObjectiveMarks({
-        mapId,
-        shouldShowCompletedObjectives,
-        tasks: computed(() => tasks),
-      });
-      const pinnedMark = mapObjectiveMarks.value.find((mark) => mark.id === 'obj-pinned');
-      expect(pinnedMark?.pinned).toBe(true);
-    });
-    it('changes marksHash when the filter toggle changes the marks length', async () => {
-      const { getMarksHash } = await import('@/features/maps/utils/marksHash');
-      const { useMapObjectiveMarks } = await setup();
-      unlockedTasks.value = {
-        'task-pinned': { self: true },
-        'task-unpinned': { self: true },
-      };
-      pinnedTaskIds.value = ['task-pinned'];
-      const tasks = buildTasks();
-      const mapId = computed(() => 'customs');
-      const shouldShowCompletedObjectives = computed(() => false);
-      mapOnlyShowPinnedTasks.value = false;
-      const { mapObjectiveMarks: marksOff } = useMapObjectiveMarks({
-        mapId,
-        shouldShowCompletedObjectives,
-        tasks: computed(() => tasks),
-      });
-      const hashOff = getMarksHash(marksOff.value, 'customs');
-      mapOnlyShowPinnedTasks.value = true;
-      const { mapObjectiveMarks: marksOn } = useMapObjectiveMarks({
-        mapId,
-        shouldShowCompletedObjectives,
-        tasks: computed(() => tasks),
-      });
-      const hashOn = getMarksHash(marksOn.value, 'customs');
-      expect(hashOff).not.toBe(hashOn);
-    });
+    expect(mapObjectiveMarks.value.find((mark) => mark.id === 'obj-pinned')?.pinned).toBe(true);
+    expect(mapObjectiveMarks.value.find((mark) => mark.id === 'obj-unpinned')?.pinned).toBe(false);
+    expect(mapObjectiveMarks.value).toHaveLength(2);
   });
 });

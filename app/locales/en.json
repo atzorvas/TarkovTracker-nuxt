@@ -495,12 +495,13 @@
       "pmc": "PMC"
     },
     "layers": {
-      "pmc_spawns": "PMC Spawns",
-      "pinned_only": "Pinned Only"
+      "pmc_spawns": "PMC Spawns"
     },
     "legend": {
-      "your_objectives": "Your Objectives",
-      "team_objectives": "Team Objectives",
+      "tasks": "Tasks",
+      "regular": "Regular",
+      "pinned": "Pinned",
+      "team": "Team",
       "shared_extract": "Shared Extract (Either Faction)",
       "coop_extract": "Co-op Extract (PMC + Scav)"
     },

@@ -89,16 +89,6 @@
         >
           {{ t('maps.layers.pmc_spawns') }}
         </UButton>
-        <UButton
-          color="neutral"
-          :variant="mapOnlyShowPinnedTasks ? 'soft' : 'ghost'"
-          size="sm"
-          icon="i-mdi-pin"
-          :class="mapOnlyShowPinnedTasks ? MAP_BUTTON_ACTIVE_CLASS : MAP_BUTTON_INACTIVE_CLASS"
-          @click="mapOnlyShowPinnedTasks = !mapOnlyShowPinnedTasks"
-        >
-          {{ t('maps.layers.pinned_only') }}
-        </UButton>
         <UPopover>
           <UButton
             color="neutral"
@@ -277,26 +267,47 @@
           v-if="props.showLegend"
           class="text-surface-300 flex flex-wrap items-center gap-4 text-xs"
         >
-          <div class="flex items-center gap-1">
-            <div
-              class="h-3 w-3 rounded-full border border-white/30"
-              :style="{ backgroundColor: mapColors.SELF_OBJECTIVE }"
-            />
-            <span>{{ t('maps.legend.your_objectives') }}</span>
-          </div>
-          <div class="flex items-center gap-1">
-            <div
-              class="h-3 w-3 rounded-full border border-white/30"
-              :style="{ backgroundColor: mapColors.PINNED_OBJECTIVE }"
-            />
-            <span>{{ t('settings.interface.maps.colors.pinned_objective') }}</span>
-          </div>
-          <div class="flex items-center gap-1">
-            <div
-              class="h-3 w-3 rounded-full border border-white/30"
-              :style="{ backgroundColor: mapColors.TEAM_OBJECTIVE }"
-            />
-            <span>{{ t('maps.legend.team_objectives') }}</span>
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="text-surface-400 text-[10px] font-medium tracking-wide uppercase">
+              {{ t('maps.legend.tasks') }}
+            </span>
+            <button
+              v-for="chip in objectiveChips"
+              :key="chip.key"
+              type="button"
+              :disabled="chip.disabled"
+              class="flex items-center gap-2 rounded-full border px-3 py-1.5 transition-opacity disabled:cursor-not-allowed"
+              :class="chip.isOn ? '' : chip.disabled ? 'opacity-55' : 'opacity-55 hover:opacity-80'"
+              :style="{
+                borderColor: chip.isOn
+                  ? `color-mix(in srgb, ${chip.color} 45%, transparent)`
+                  : 'var(--color-surface-700)',
+                backgroundColor: chip.isOn
+                  ? `color-mix(in srgb, ${chip.color} 15%, transparent)`
+                  : 'transparent',
+              }"
+              :aria-pressed="chip.isOn"
+              @click="chip.toggle()"
+            >
+              <span
+                class="h-2 w-2 shrink-0 rounded-full"
+                :class="chip.isOn ? '' : 'box-border border-[1.5px]'"
+                :style="chip.isOn ? { backgroundColor: chip.color } : { borderColor: chip.color }"
+              />
+              <span
+                class="text-surface-100"
+                :class="chip.isOn ? '' : 'text-surface-400 line-through'"
+              >
+                {{ chip.label }}
+              </span>
+              <span
+                class="text-surface-400"
+                :class="chip.isOn ? '' : 'line-through'"
+                :style="chip.isOn ? { color: chip.color } : {}"
+              >
+                {{ chip.count }}
+              </span>
+            </button>
           </div>
           <div v-if="showPmcSpawns && hasPmcSpawns" class="flex items-center gap-1">
             <div class="h-3 w-3 rounded-full" :style="{ backgroundColor: mapColors.PMC_SPAWN }" />
@@ -438,9 +449,80 @@
   const isMapUnavailable = computed(() => {
     return props.map?.unavailable === true;
   });
-  const mapOnlyShowPinnedTasks = computed({
-    get: () => preferencesStore.getMapOnlyShowPinnedTasks,
-    set: (value: boolean) => preferencesStore.setMapOnlyShowPinnedTasks(value),
+  type ObjectiveCategory = 'self' | 'pinned' | 'team';
+  const getObjectiveCategory = (mark: MapMark): ObjectiveCategory => {
+    if (mark.pinned) return 'pinned';
+    return mark.users?.includes('self') ? 'self' : 'team';
+  };
+  const markRendersOnMap = (mark: MapMark): boolean =>
+    (mark.possibleLocations?.some((location) => location.map.id === props.map.id) ?? false) ||
+    mark.zones.some((zone) => zone.map.id === props.map.id);
+  const objectiveCategoryCounts = computed(() => {
+    const counts: Record<ObjectiveCategory, number> = { self: 0, pinned: 0, team: 0 };
+    props.marks.forEach((mark) => {
+      if (!markRendersOnMap(mark)) return;
+      counts[getObjectiveCategory(mark)]++;
+    });
+    return counts;
+  });
+  const mapShowSelfObjectives = computed({
+    get: () => preferencesStore.getMapShowSelfObjectives,
+    set: (value: boolean) => preferencesStore.setMapShowSelfObjectives(value),
+  });
+  const mapShowPinnedObjectives = computed({
+    get: () => preferencesStore.getMapShowPinnedObjectives,
+    set: (value: boolean) => preferencesStore.setMapShowPinnedObjectives(value),
+  });
+  const mapShowTeamObjectives = computed({
+    get: () => preferencesStore.getMapShowTeamObjectives,
+    set: (value: boolean) => preferencesStore.setMapShowTeamObjectives(value),
+  });
+  interface ObjectiveChip {
+    key: ObjectiveCategory;
+    label: string;
+    color: string;
+    count: number;
+    isOn: boolean;
+    disabled: boolean;
+    toggle: () => void;
+  }
+  const objectiveChips = computed<ObjectiveChip[]>(() => {
+    const counts = objectiveCategoryCounts.value;
+    return [
+      {
+        key: 'self',
+        label: t('maps.legend.regular'),
+        color: mapColors.value.SELF_OBJECTIVE,
+        count: counts.self,
+        isOn: mapShowSelfObjectives.value && counts.self > 0,
+        disabled: counts.self === 0,
+        toggle: () => {
+          mapShowSelfObjectives.value = !mapShowSelfObjectives.value;
+        },
+      },
+      {
+        key: 'pinned',
+        label: t('maps.legend.pinned'),
+        color: mapColors.value.PINNED_OBJECTIVE,
+        count: counts.pinned,
+        isOn: mapShowPinnedObjectives.value && counts.pinned > 0,
+        disabled: counts.pinned === 0,
+        toggle: () => {
+          mapShowPinnedObjectives.value = !mapShowPinnedObjectives.value;
+        },
+      },
+      {
+        key: 'team',
+        label: t('maps.legend.team'),
+        color: mapColors.value.TEAM_OBJECTIVE,
+        count: counts.team,
+        isOn: mapShowTeamObjectives.value && counts.team > 0,
+        disabled: counts.team === 0,
+        toggle: () => {
+          mapShowTeamObjectives.value = !mapShowTeamObjectives.value;
+        },
+      },
+    ];
   });
   const mapContainer = ref<HTMLElement | null>(null);
   const {
@@ -1088,9 +1170,22 @@
       }
       return Math.abs(sum / 2);
     };
+    const categoryColors: Record<ObjectiveCategory, string> = {
+      self: mapColors.value.SELF_OBJECTIVE,
+      pinned: mapColors.value.PINNED_OBJECTIVE,
+      team: mapColors.value.TEAM_OBJECTIVE,
+    };
+    const categoryEnabled: Record<ObjectiveCategory, boolean> = {
+      self: mapShowSelfObjectives.value,
+      pinned: mapShowPinnedObjectives.value,
+      team: mapShowTeamObjectives.value,
+    };
     props.marks.forEach((mark) => {
       const objectiveId = mark.id;
       if (!objectiveId) return;
+      const category = getObjectiveCategory(mark);
+      if (!categoryEnabled[category]) return;
+      const markerColor = categoryColors[category];
       mark.possibleLocations?.forEach((location) => {
         if (location.map.id !== props.map.id) return;
         const positions = location.positions;
@@ -1098,12 +1193,6 @@
         const pos = positions[0];
         if (!pos) return;
         const latLng = gameToLatLng(pos.x, pos.z);
-        const isSelf = mark.users?.includes('self') ?? false;
-        const markerColor = mark.pinned
-          ? mapColors.value.PINNED_OBJECTIVE
-          : isSelf
-            ? mapColors.value.SELF_OBJECTIVE
-            : mapColors.value.TEAM_OBJECTIVE;
         const marker = L.circleMarker([latLng.lat, latLng.lng], {
           radius: 8,
           fillColor: markerColor,
@@ -1118,12 +1207,7 @@
         if (zone.outline.length < 3) return;
         const latLngs = outlineToLatLngArray(zone.outline);
         if (latLngs.length < 3) return;
-        const isSelf = mark.users?.includes('self') ?? false;
-        const zoneColor = mark.pinned
-          ? mapColors.value.PINNED_OBJECTIVE
-          : isSelf
-            ? mapColors.value.SELF_OBJECTIVE
-            : mapColors.value.TEAM_OBJECTIVE;
+        const zoneColor = markerColor;
         const polygonLatLngs = latLngs.map((ll) => [ll.lat, ll.lng]) as L.LatLngExpression[];
         const polygon = L.polygon(polygonLatLngs, {
           color: zoneColor,
@@ -1354,6 +1438,10 @@
     { deep: true }
   );
   watch(mapZoneOpacity, () => {
+    lastMarksHash.value = '';
+    updateMarkers();
+  });
+  watch([mapShowSelfObjectives, mapShowPinnedObjectives, mapShowTeamObjectives], () => {
     lastMarksHash.value = '';
     updateMarkers();
   });

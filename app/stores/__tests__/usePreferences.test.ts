@@ -133,7 +133,9 @@ describe('usePreferencesStore', () => {
       expect(store.mapZoomSpeed).toBe(1);
       expect(store.mapPanSpeed).toBe(1);
       expect(store.pinnedTaskIds).toEqual([]);
-      expect(store.mapOnlyShowPinnedTasks).toBe(false);
+      expect(store.mapShowSelfObjectives).toBe(true);
+      expect(store.mapShowPinnedObjectives).toBe(true);
+      expect(store.mapShowTeamObjectives).toBe(true);
     });
     it('sanitizes keybinds assigned through store actions', () => {
       const store = usePreferencesStore();
@@ -945,11 +947,17 @@ describe('usePreferencesStore', () => {
       store.pinnedTaskIds = ['task-1', 'task-2'];
       expect(store.getPinnedTaskIds).toEqual(['task-1', 'task-2']);
     });
-    it('should return mapOnlyShowPinnedTasks state with default false', () => {
+    it('should return map objective visibility state with default true', () => {
       const store = usePreferencesStore();
-      expect(store.getMapOnlyShowPinnedTasks).toBe(false);
-      store.mapOnlyShowPinnedTasks = true;
-      expect(store.getMapOnlyShowPinnedTasks).toBe(true);
+      expect(store.getMapShowSelfObjectives).toBe(true);
+      expect(store.getMapShowPinnedObjectives).toBe(true);
+      expect(store.getMapShowTeamObjectives).toBe(true);
+      store.mapShowSelfObjectives = false;
+      store.mapShowPinnedObjectives = false;
+      store.mapShowTeamObjectives = false;
+      expect(store.getMapShowSelfObjectives).toBe(false);
+      expect(store.getMapShowPinnedObjectives).toBe(false);
+      expect(store.getMapShowTeamObjectives).toBe(false);
     });
     it('should return skillSortMode state with default priority', () => {
       const store = usePreferencesStore();
@@ -1298,12 +1306,14 @@ describe('usePreferencesStore', () => {
       store.setShowFailedFilter(false);
       expect(store.showFailedFilter).toBe(false);
     });
-    it('should set only show pinned tasks filter', () => {
+    it('should set map objective visibility filters', () => {
       const store = usePreferencesStore();
-      store.setMapOnlyShowPinnedTasks(true);
-      expect(store.mapOnlyShowPinnedTasks).toBe(true);
-      store.setMapOnlyShowPinnedTasks(false);
-      expect(store.mapOnlyShowPinnedTasks).toBe(false);
+      store.setMapShowSelfObjectives(false);
+      expect(store.mapShowSelfObjectives).toBe(false);
+      store.setMapShowPinnedObjectives(false);
+      expect(store.mapShowPinnedObjectives).toBe(false);
+      store.setMapShowTeamObjectives(false);
+      expect(store.mapShowTeamObjectives).toBe(false);
     });
   });
   describe('Actions - XP and Level', () => {
@@ -1455,10 +1465,16 @@ describe('usePreferencesStore', () => {
       store.$patch({ pinnedTaskIds: undefined });
       expect(store.getPinnedTaskIds).toEqual([]);
     });
-    it('should handle nullish mapOnlyShowPinnedTasks in getter', () => {
+    it('should handle nullish map objective visibility state in getters', () => {
       const store = usePreferencesStore();
-      store.$patch({ mapOnlyShowPinnedTasks: undefined });
-      expect(store.getMapOnlyShowPinnedTasks).toBe(false);
+      store.$patch({
+        mapShowSelfObjectives: undefined,
+        mapShowPinnedObjectives: undefined,
+        mapShowTeamObjectives: undefined,
+      });
+      expect(store.getMapShowSelfObjectives).toBe(true);
+      expect(store.getMapShowPinnedObjectives).toBe(true);
+      expect(store.getMapShowTeamObjectives).toBe(true);
     });
     it('should handle nullish mapMarkerColors in getter', () => {
       const store = usePreferencesStore();
