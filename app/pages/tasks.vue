@@ -13,53 +13,40 @@
           <template v-else>
             <div v-if="showMapDisplay" ref="mapContainerRef" class="mb-6">
               <div class="bg-surface-800/50 rounded-lg p-4">
-                <div class="mb-3 flex items-start justify-between gap-3">
+                <div class="mb-3 flex items-center justify-between gap-3">
                   <button
                     type="button"
                     data-testid="map-panel-toggle"
                     :aria-expanded="isMapPanelExpanded"
                     aria-controls="tasks-map-panel-content"
                     :aria-label="t('page.tasks.map.toggle_panel')"
-                    class="hover:bg-surface-800/40 focus-visible:ring-primary-500 focus-visible:ring-offset-surface-800 group -m-1.5 flex min-w-0 flex-1 cursor-pointer items-start gap-2.5 rounded-lg p-1.5 text-left transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+                    class="hover:bg-surface-800/40 focus-visible:ring-primary-500 focus-visible:ring-offset-surface-800 group -m-1.5 flex min-w-0 flex-1 cursor-pointer flex-wrap items-center justify-between gap-2.5 rounded-lg p-1.5 text-left transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
                     @click="toggleMapPanelVisibility"
                   >
-                    <span
-                      class="bg-primary-500/15 border-primary-500/25 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border"
-                    >
-                      <UIcon
-                        name="i-mdi-map-marker-radius-outline"
-                        class="text-primary-300 h-4 w-4"
-                      />
-                    </span>
-                    <span class="min-w-0 flex-1 space-y-1.5">
-                      <span class="flex min-w-0 items-center gap-2">
-                        <h3 class="text-surface-100 truncate text-lg leading-tight font-semibold">
-                          {{ selectedMapData?.name || t('tasks.view.map') }}
-                        </h3>
-                        <span
-                          class="text-surface-400 border-surface-700 bg-surface-800/60 group-hover:text-surface-100 inline-flex shrink-0 items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap transition-colors"
-                        >
-                          <UIcon
-                            :name="isMapPanelExpanded ? 'i-mdi-chevron-up' : 'i-mdi-chevron-down'"
-                            class="h-3.5 w-3.5 transition-transform duration-200"
-                          />
-                          {{
-                            isMapPanelExpanded
-                              ? t('page.tasks.map.hide_map')
-                              : t('page.tasks.map.show_map')
-                          }}
-                        </span>
+                    <span class="flex min-w-0 flex-wrap items-center gap-2.5">
+                      <span
+                        class="bg-primary-500/15 border-primary-500/25 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border"
+                      >
+                        <UIcon
+                          name="i-mdi-map-marker-radius-outline"
+                          class="text-primary-300 h-4 w-4"
+                        />
                       </span>
-                      <span class="flex flex-wrap items-center gap-2">
+                      <h3 class="text-surface-100 truncate text-lg leading-tight font-semibold">
+                        {{ selectedMapData?.name || t('tasks.view.map') }}
+                      </h3>
+                      <div
+                        v-if="mapTimeEntries.length"
+                        class="border-surface-700 divide-surface-700 flex items-center divide-x overflow-hidden rounded-md border"
+                      >
                         <span
                           v-for="(entry, index) in mapTimeEntries"
                           :key="`${entry.value}-${index}`"
-                          class="inline-flex items-center gap-2 rounded-md border px-2.5 py-1 text-xs font-semibold"
-                          :class="entry.badgeClass"
+                          class="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold"
                         >
                           <UIcon
                             :name="entry.icon"
-                            :class="['h-4 w-4 shrink-0', entry.iconClass]"
+                            :class="['h-3.5 w-3.5 shrink-0', entry.iconClass]"
                           />
                           <span class="tracking-wide uppercase" :class="entry.labelClass">
                             {{ getMapTimeLabel(entry.period) }}
@@ -68,15 +55,35 @@
                             {{ entry.value }}
                           </span>
                         </span>
-                      </span>
+                      </div>
+                    </span>
+                    <span
+                      class="text-surface-400 border-surface-700 bg-surface-800/60 group-hover:text-surface-100 inline-flex shrink-0 items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap transition-colors"
+                      :class="
+                        isMapPanelExpanded
+                          ? 'border-primary-500/40 bg-primary-500/15 text-primary-200'
+                          : ''
+                      "
+                    >
+                      <UIcon name="i-mdi-map-outline" class="h-3.5 w-3.5 shrink-0" />
+                      {{
+                        isMapPanelExpanded
+                          ? t('page.tasks.map.hide_map')
+                          : t('page.tasks.map.show_map')
+                      }}
+                      <UIcon
+                        :name="isMapPanelExpanded ? 'i-mdi-chevron-up' : 'i-mdi-chevron-down'"
+                        class="h-3.5 w-3.5 transition-transform duration-200"
+                      />
                     </span>
                   </button>
                   <UButton
                     data-testid="map-fullscreen-toggle"
                     icon="i-mdi-fullscreen"
-                    variant="ghost"
+                    variant="outline"
                     color="neutral"
-                    size="xs"
+                    size="md"
+                    square
                     :aria-label="
                       isMapFullscreen
                         ? t('page.tasks.map.exit_fullscreen')
@@ -87,7 +94,7 @@
                         ? t('page.tasks.map.exit_fullscreen')
                         : t('page.tasks.map.open_fullscreen')
                     "
-                    class="mt-0.5 shrink-0"
+                    class="shrink-0"
                     @click="isMapFullscreen ? closeMapFullscreen() : openMapFullscreen()"
                   />
                 </div>
