@@ -37,6 +37,8 @@ and have an agent verify the answer against the code.
     selection, public resolution, and client polling
 11. [Boot-time asset-failure recovery](#11-boot-time-asset-failure-recovery) — recovering from
     stale-chunk load failures before and after the app boots
+12. [Map objective visibility and required items](#12-map-objective-visibility-and-required-items) —
+    map marker categories and split pinned/active requirements
 
 ---
 
@@ -342,6 +344,12 @@ sequenceDiagram
 
 - Module-level cache (`cachedOverlay`, `cacheTimestamp`) with a 1-hour TTL
   (`OVERLAY_CACHE_TTL = 3600000`).
+- The configured overlay URL must use HTTPS. Invalid URLs and non-HTTPS schemes fall back to the
+  trusted `raw.githubusercontent.com` source so corrections cannot be modified in transit.
+- Redirects are followed manually (`redirect: 'manual'`) for at most `MAX_OVERLAY_REDIRECTS = 3`
+  hops, and every hop must also be HTTPS. A redirect to a non-HTTPS target, a redirect without a
+  `location` header, or exceeding the hop limit aborts the fetch and leaves the previous overlay in
+  place.
 - Overlay task patches carry trader requirements in the raw upstream shape: one
   `traderRequirements` list discriminated by `requirementType` (`level` gates
   trader loyalty level, `reputation` gates standing). `applyOverlay` re-splits
@@ -387,6 +395,13 @@ sequenceDiagram
   `FETCH_TIMEOUT_MS = 5000`. On timeout, fall back to the cached overlay.
 - A missing or malformed overlay must never cause a 5xx; the base payload is returned with
   `X-Overlay-Status: missing`.
+- Overlay data must only be fetched over HTTPS on every server path. A non-HTTPS `OVERLAY_URL` must
+  resolve to the trusted default, and no redirect hop may downgrade the transport — the fetch must
+  fail rather than read a payload served over plaintext. `applyOverlay` follows HTTPS redirects
+  manually; the streamer Kappa editions fetch in
+  `app/server/api/streamer/[userId]/[mode]/kappa.get.ts` uses `redirect: 'error'` because its URL is
+  a hardcoded constant that never redirects. Any new server-side overlay consumer must do one or the
+  other.
 - Overlay metadata (`status`, `version`, `generated`, `sha256`) must be propagated to response
   headers so we can debug which correction was applied. Routes that apply an overlay after
   `edgeCache()` must call `setOverlayResponseHeaders()` before returning.
@@ -617,7 +632,9 @@ flowchart LR
    audit event together. `user_system` keeps legacy persistent PvP/PvE columns plus the active
    Seasonal team column. The team-members endpoint reads the `team_member_mode_summary` view, which
    derives display name, level, and completed-task count inside the database so teammate progress
-   blobs never cross the wire.
+   blobs never cross the wire. Owners disband through the authenticated `team-disband` function,
+   which calls an atomic service-role-only RPC; regular `team-leave` remains the non-owner leave
+   path.
 6. The active season definition carries its number, start date, and exact end timestamp. The UI
    counts down to that end timestamp. Advancing the number starts each account on a fresh empty row;
    historical rows remain retained and cannot be merged into the new season. Locally persisted
@@ -636,6 +653,9 @@ flowchart LR
 
 - `supabase/migrations/20260804043342_normalize_game_mode_progress_and_add_seasonal.sql` — schema,
   RLS, compatibility triggers, `team_member_mode_summary`, sync/sharing/prestige RPCs
+- `supabase/migrations/20260829120000_add_atomic_team_disband.sql` — owner-scoped atomic team
+  disband RPC and grants
+- `supabase/functions/team-disband/index.ts` — authenticated owner disband endpoint
 - `supabase/migrations/20260806120000_add_game_mode_progress_backfill_helper.sql` — retained,
   revoked helper for optional one-range-at-a-time operational maintenance. Correctness does not
   depend on running it; see the Database Migrations section of `docs/runbook.md`
@@ -645,6 +665,8 @@ flowchart LR
   `app/stores/useTarkov.ts` — load, merge, write, and realtime flow
 - `app/stores/useSystemStore.ts`, `app/stores/useTeamStore.ts` — mode-specific teams and teammate
   hydration
+- `app/features/team/TeamDangerZone.vue`, `app/features/team/useTeamInviteLink.ts` — resolved active
+  team actions and mode-scoped invite links
 - `app/composables/useDataBackup.ts` — season-aware native backups
 - `app/server/api/profile/[userId]/[mode].get.ts`,
   `app/server/api/streamer/[userId]/[mode]/kappa.get.ts`, `app/server/api/team/members.ts` —
@@ -655,6 +677,11 @@ flowchart LR
 ### Invariants
 
 - `pvp` and `pve` always use season `0`; `seasonal` always uses a positive season.
+- Legacy `user_system.team` / `team_id` values are used only when neither persistent mode-specific
+  team ID exists. They must never make a PvP team appear as the active PvE team or vice versa.
+- Team actions and invite links are unavailable until the active team row has loaded and its ID
+  matches the mode-specific system-store team ID; stale owner or join-code state is never combined
+  with another team's ID.
 - App `ACTIVE_SEASON` metadata must match the database's `private.active_season_*()` functions;
   the Worker resolves the active Seasonal number through the database instead of carrying a
   second runtime constant.
@@ -909,9 +936,11 @@ flowchart LR
    config to the shared `usePromotedTwitch` client state, so the embed in the same tab adopts the
    change immediately without waiting for a poll.
 2. `POST /api/admin/twitch-config` requires authenticated admin membership and validates the Twitch
-   channel, display name, and enabled flag. It calls `update_promoted_twitch_config`, which updates the
-   `promoted_twitch` JSON value, advances its shared version, and writes the admin audit row in one
-   database transaction. A failure rolls back both writes.
+   channel, display name, and enabled flag. Validation and operational failures include a stable
+   `data.code` for clients; the English `statusMessage` remains a non-localized fallback. It calls
+   `update_promoted_twitch_config`, which updates the `promoted_twitch` JSON value, advances its
+   shared version, and writes the admin audit row in one database transaction. A failure rolls back
+   both writes.
 3. Only after the transaction commits does the route invoke the `admin-cache-purge` edge function
    with `purgeType: 'twitch-config'`, which calls the Cloudflare Purge API with the
    `promoted-twitch-config` cache tag. If the tag purge fails, the edge function falls back
@@ -1057,6 +1086,62 @@ Page load
   otherwise storage breakage produces an unbounded reload loop.
 - The retry URL always carries `_tt_retry=<timestamp>` so the reload bypasses the browser's cached
   HTML and revalidates against the current deployment.
+
+## 12. Map objective visibility and required items
+
+**Summary.** The Tasks map derives objective visibility once for map markers and the required-item
+summary. Objectives are categorized as pinned, self, or team, while the summary separately groups
+items and keys from pinned tasks and active tasks so pinned requirements remain distinguishable.
+
+### Flow
+
+1. `useMapObjectiveMarks` derives each objective's active users, completion state, and category.
+   Pinning is resolved from the enclosing task ID; pinned objectives take precedence over self and
+   team membership. The composable returns both map marks and an objective-visibility map, each
+   entry carrying the category plus `selfNeedsObjective` — whether the local player still needs
+   that objective themselves.
+2. `LeafletMap` applies the pinned, self, and team map preferences to marker colors and visibility.
+3. `MapRequiredItemsSummary` splits the selected task set using the persisted pinned task IDs, then
+   aggregates bring-mode equipment and alternative key groups independently for each group. It
+   filters objectives to the selected map and the shared objective-visibility state.
+4. The summary's pinned group follows the pinned-objective preference. Its active group follows the
+   self-objective preference. Objectives the player does not still need themselves are dropped, so
+   the Team chip never changes required-item summaries.
+
+### Files
+
+- `app/composables/useMapObjectiveMarks.ts` — objective users, categories, map marks, and shared
+  visibility state.
+- `app/features/maps/LeafletMap.vue` — marker category filtering and map rendering.
+- `app/features/maps/MapRequiredItemsSummary.vue` — pinned/active grouping and preference gates.
+- `app/features/maps/composables/useMapRequiredItems.ts` — selected-map item/key aggregation.
+- `app/features/tasks/task-objective-equipment.ts` — canonical bring-mode equipment extraction.
+- `app/pages/tasks.vue` — passes filtered tasks and shared visibility into the map components.
+
+### Invariants
+
+- Pinning is determined by `task.id`, never by an objective ID; a pinned task's objectives are
+  categorized as `pinned` before self or team membership is considered.
+- Map marker visibility is controlled independently by the pinned, self, and team preferences.
+- Required-item summaries use the selected map and shared objective visibility, exclude completed
+  objectives, and preserve equipment counts and alternative key groups after deduplication.
+- A summary lists only what the local player still needs, and enforces that through
+  `selfNeedsObjective` rather than through `category`. That covers objectives the player ticked
+  off, tasks they completed or failed, and tasks they have not unlocked — even when a teammate
+  still needs the objective. Gating on `category` alone would be wrong, because a pinned task
+  reports `category: 'pinned'` and would otherwise mask a teammate-only requirement.
+- Pinned and active task requirements are aggregated into separate groups whenever both contain
+  visible content; the pinned group uses the pinned marker accent.
+- The pinned summary group follows `mapShowPinnedObjectives`; the active summary group follows
+  `mapShowSelfObjectives`. `mapShowTeamObjectives` does not hide or alter the required-item
+  summary, preserving the product rule that the Team chip controls map markers only.
+- Bring-mode aggregation additionally includes the canonical `objective.item` field for bring-type
+  objectives, covering upstream objectives that expose no `items` array. Task-card rendering uses
+  `all` mode and is unaffected by that field, and neither mode reintroduces the removed task
+  `alternatives` runtime dependency.
+- A group given a title renders its section headings one level down (`h4`) and uses the short
+  `required_items` / `required_keys` labels; an untitled standalone group keeps the `h3` level and
+  the longer `*_summary` labels.
 
 ## When this doc is wrong
 
